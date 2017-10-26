@@ -1,0 +1,743 @@
+% -*- mmm-noweb-code-mode: sh-mode; -*-
+
+\documentclass[12pt]{article}
+\usepackage{mathptmx}
+\usepackage[smallcode,longchunks,shortxref]{knoweb}
+\usepackage{syntax,xspace,paralist}
+\usepackage{color}
+\usepackage{ifpdf}
+\ifpdf
+\usepackage[pdftex,colorlinks,backref,bookmarks
+  ,pdftitle={knoweb.sty}
+  ,pdfauthor={Joseph S. Riel}
+  ,pdfpagemode={UseOutline}
+  ,bookmarksopen={true}
+  ]{hyperref}
+\else
+  \usepackage[dvips,backref]{hyperref}
+\fi
+
+\pagestyle{noweb}
+
+\newcommand{\comment}[1]{\textcolor{blue}{#1}}
+\newenvironment{harangue}{\color{blue}}{}
+
+\newcommand{\cmd}[1]{\textit{#1}\xspace}
+
+\newcommand{\bash}{\cmd{bash}}
+\newcommand{\knoweb}{\cmd{knoweb}}
+\newcommand{\noweave}{\cmd{noweave}}
+\newcommand{\noweb}{\cmd{noweb}}
+\newcommand{\maple}{\cmd{maple}}
+\newcommand{\smarch}{\cmd{smarch}}
+
+
+\newcommand{\file}[1]{\texttt{#1}}
+\newcommand{\fileq}[1]{`\file{#1}'}
+\let\target=\fileq
+\let\option=\fileq
+
+\newcommand{\mload}{\cmd{mload}}
+
+\title{\file{mload}\\[2ex] A \bash Script for Loading Maple Source Files into a Maple Library Archive}
+\author{Joseph S. Riel\quad\href{mailto:joer@san.rr.com}{\texttt{joer@san.rr.com}}}
+
+\begin{document}
+
+\maketitle
+
+\mload is a \bash script
+that loads Maple source files into a Maple library archive (\fileq{.mla} file).
+It uses tty \maple and supports both short and GNU-style long options.
+It is a replacement for \cmd{sload}.
+
+\section{Creation}
+\label{sec:creation}
+
+This is the \noweb documentation for \mload.
+It is overkill for such a small script, however,
+there are some subtleties that are not otherwise easily documented.  
+Regardless, I've found that crafting a literate program
+invariably leads to better code and
+allows me to understand what I did several years hence.
+
+To recreate this pdf, use the provided \fileq{Makefile} with target \target{pdf}.
+To create \mload, use the target \target{cmds} or \target{mload}.
+
+
+\section{Usage}
+\label{sec:usage}
+
+The most basic usage is
+
+\begin{verbatim}
+  mload mypkg.mpl
+\end{verbatim}
+%
+which reads the Maple source file \fileq{mypkg.mpl} and loads the result into \fileq{mypkg.mla},
+provided \fileq{mypkg.mpl} includes the appropriate \cmd{savelib} command, typically
+
+\begin{verbatim}
+  #savelib('mypkg')
+\end{verbatim}
+
+More typical is to explicitly assign the Maple archive with the \option{--mla} option.
+For example
+
+\begin{verbatim}
+  mload --mla=mypkg.mla mypkg.mpl
+\end{verbatim}
+
+\subsection{Options}
+\label{sec:options}
+
+The following subsections defines each of the options available to \mload.
+Most of the short-form options are standard command-line [[maple]] options;
+see the [[maple]] help page.
+
+\subsubsection{Append}
+\label{sec:append}
+
+The \option{--append} ([[-a]]) option appends to an existing archive.
+If the archive does not exist, it is created.
+
+\subsubsection{Assert}
+\label{sec:assert}
+
+The \option{--assert=n} ([[-A n]]) option sets the assert level to [[n]] during the build,
+which tells Maple what assertions to check.
+The value can be 0, 1, or 2:
+\begin{itemize}
+\item[0] assertions are not checked
+\item[1] calls to the [[ASSERT]] function are checked
+\item[2] calls to the [[ASSERT]] function and type assignments are checked
+\end{itemize}
+The default is 2.
+
+\subsubsection{Default Libname}
+\label{sec:default-libname}
+
+The \option{--defaultlib} ([[-B]]) option adds the default library directory to [[libname]].
+See \S~\ref{sec:libname}.
+
+\subsubsection{Define Macro}
+\label{sec:define-macro}
+
+The \option{--define=M} ([[-D M]]) option defines the preprocessor macro [[M]]
+to expand to 1.  It evaluates true in preprocessor conditionals.
+
+\subsubsection{Error Level}
+\label{sec:error-level}
+
+The \option{--error=n} ([[-e n]]) option sets the error level to [[n]] during the build.
+The value can be 0, 1 or 2:
+\begin{itemize}
+\item[0] report any error, but continue
+\item[1] report any error, halt on a syntax error
+\item[2] report any error, halt on any error
+\end{itemize}
+The default is 2.
+
+\subsubsection{Help}
+\label{sec:help}
+
+The \option{--help} ([[-h]]) option prints the help for [[mload]].
+
+\subsubsection{Include Path}
+\label{sec:include-path}
+
+The \option{--include=DIR} ([[-I DIR]]) option add the directory [[DIR]] to the include path,
+which is used to resolve preprocessor ``\$include'' statements in the source.
+Multiple \option{--include} options can be used.
+Multiple directories can also be included in one option by separating them with commas.
+
+
+\subsubsection{Libname}
+\label{sec:libname}
+
+The \option{--lib=LIB} ([[-b LIB]]) option adds [[LIB]] to [[libname]].
+Multiple \option{--lib} options can be used.
+The first usage sets the [[libname]], the others append to it.
+
+\subsubsection{Lineinfo}
+\label{sec:lineinfo}
+
+The \option{--lineinfo} ([[-l]]) option causes \mload to insert 
+filename macros into the source as it is sent to Maple.  
+Maple's parser uses these macros to create data (lineinfo) 
+that maps procedure statements to locations in the source.
+% If Maple has been compiled with a custom kernel, 
+% this data is saved in the library archive.
+To make this data available when the archive is loaded into Maple,
+pass the [[--keep-debug-info]] option to tty Maple or
+set the [[keepdebuginfo]] variable of [[kernelopts]] to true:
+
+\begin{verbatim}
+  kernelopts('keepdebuginfo' = true):
+\end{verbatim}
+
+To access the data for, say, procedure [[foo]], execute, in Maple, 
+
+\begin{verbatim}
+   debugopts('lineinfo' = foo);
+\end{verbatim}
+
+This lineinfo data is used by the Maple/Emacs debugger, [[mdcs]],
+to step through the source file.
+It is important that the file paths stored in the archive are absolute, 
+otherwise the debugger will not be able to locate the source files.  
+To create absolute paths,
+  use angle brackets ([[<...>]]) rather than double quotes
+    to delimit a relative path in a Maple include statement
+  and  
+    use absolute paths when assigning the include path.
+
+\subsubsection{Lock Warnings}
+\label{sec:lock-warnings}
+
+The \option{--nolockwarn} ([[-k]]) option
+suppresses the display of the warnings generated 
+when Maple detects that a procedure is not thread-safe
+and automatically adds the Maple option [[lock]] to the procedure.
+This option is useful only when the \option{--syslib} option is true.
+
+\subsubsection{Log Loads}
+\label{sec:log-loads}
+
+The \option{--log=LOG} ([[-L LOG]]) option
+causes Maple, during the build,
+to write the name of each object loaded from a library,
+prepended by the path to the library,
+to the file [[LOG]].
+
+\subsubsection{Maple Archive}
+\label{sec:maple-archive}
+
+The \option{--mla=MLA} ([[-m MLA]]) option
+specifies the name of the Maple archive that is created.
+If no archive is specified, the name is extracted 
+from the basename of the first source file.
+
+\subsubsection{Maple Executable}
+\label{sec:maple-executable}
+
+The \option{--maple=MAPLE} ([[-M MAPLE]]) option
+specifies the script to run command-line Maple.
+The default is [[maple]].
+
+\subsubsection{Pack the Archive}
+\label{sec:pack-archive}
+
+The \option{--pack} ([[-p]]) option packs the library archive, 
+which removes wasted space from old copies of objects.
+
+
+\subsubsection{Priority}
+\label{sec:priority}
+
+The \option{--priority=n} ([[-P n]]) option
+sets the priority of the archive, 
+which specifies the search order when there are multiple
+archives in one directory.
+Archives with higher priority are searched first.
+Archives with the same priority are searched in alphabetical order.
+
+\subsubsection{Quiet}
+\label{sec:quiet}
+
+The \option{--quiet} ([[-Q]]) option
+suppresses non-error messages.
+
+\subsubsection{Readonly}
+\label{sec:readonly}
+
+The \option{--readonly} ([[-R]]) option makes the archive readonly.
+This is an attribute of the archive that is independent
+of the operating system.
+
+\subsubsection{Reindex}
+\label{sec:reindex}
+
+The \option{--reindex} ([[-r]]) option reindexes the archive,
+which generates an optimal sized hash table.
+
+\subsubsection{Skip Initialization}
+\label{sec:skip-initialization}
+
+The \option{--skipini} ([[-s]]) option causes the Maple script
+to skip reading the Maple initialization files.
+
+\subsubsection{System Library}
+\label{sec:system-library}
+
+The \option{--syslib} ([[-S]]) option
+adds the [[_syslib]] option to each procedure,
+which indicates that it is a system library procedure.
+It does so by using [[_savelib]] rather than [[savelib]] to build the archive.   
+When this option is active, Maple generates warnings 
+when it detects a procedure is not thread-save, see \S~\ref{sec:lock-warnings}.
+
+\subsubsection{Undefine Macro}
+\label{sec:undefine-macro}
+
+The \option{--undefine=M} ([[-U M]]) option undefines macro [[M]].
+This only effects macros defined by a preceding option in
+the command-line, so is not particularly useful.
+
+\subsubsection{Warnings}
+\label{sec:warnings}
+
+The \option{--warn=n} ([[-w n]]) option sets the warning level
+used during the build.
+The value can be 0, 1 or 2:
+\begin{itemize}
+\item[0] turn off all warnings
+\item[1] enable library generated warnings
+\item[2] enable library and kernel generated warnings
+\item[3] enable library, kernel, and parser generated warnings
+\item[4] enable all warnings
+\end{itemize}
+
+
+\section{Code}
+\label{sec:code}
+
+\subsection{Header}
+\label{sec:header}
+
+Insert the hash-bang line and a simple documentation string.
+
+<<*>>=
+#!/bin/bash
+#
+# mload -- load Maple source files into a Maple library archive
+#
+# This file was generated from the noweb source mload.nw.
+@ 
+
+\subsection{Script Variables}
+\label{sec:script-variables}
+
+Assign a variable for the script name.
+
+<<*>>=
+SCRIPT=$(basename $0)
+@
+
+\subsection{Help Page}
+\label{sec:help-page}
+
+Assign functions that displays the usage and help page for \mload.
+
+<<*>>=
+function usage { echo "\
+Usage: ${SCRIPT} [-h|--help] [options] [--] FILE [ FILE ... ]"; \
+exit 1 ; }
+@ 
+
+<<*>>=
+function help { echo "\
+Usage: ${SCRIPT} [option ...] [--] FILE [ FILE ... ]
+
+Options:
+  -a       | --append       append to existing mla
+  -A n     | --assert=n     set assertion level to n (0,1,2); default is 2
+  -B       | --defaultlib   add default library directories
+  -b LIB   | --lib=LIB      add LIB to libname
+  -D M     | --define=M     define macro M
+  -e n     | --error=n      set error level to n (0,1,2); default is 2
+  -h       | --help         print this help
+  -I DIR   | --include=DIR  add DIR to include path
+  -k       | --nolockwarn   suppress 'adding option lock' warnings
+  -l       | --lineinfo     add lineinfo data to MLA
+  -L LOG   | --log=LOG      write library reads to file LOG
+  -m MLA   | --mla=MLA      specify the MLA (Maple library archive)
+  -M MAPLE | --maple=MAPLE  specify MAPLE script
+  -p       | --pack         pack the MLA
+  -P n     | --priority=n   assign priority (positive integer)
+  -Q       | --quiet        suppress non-error messages 
+  -R       | --readonly     make MLA read only
+  -r       | --reindex      reindex the MLA
+  -s       | --skipini      skip initialization files
+  -S       | --syslib       add _syslib and lock options
+  -U M     | --undefine=M   undefine macro M
+  -w n     | --warn=n       set warn level to n (0,1,2,3,4); default is 3
+
+Create a Maple library archive from source FILEs.
+By default, the basename of the archive is the basename 
+of the first FILE, the directory is the current directory.
+
+Examples:
+
+# Build pkg.mla at current location, using source at maple/src/pkg.mpl.
+# Use the --include option to assign the include-path used by Maple.
+
+\$ ${SCRIPT} --include=maple,maple/include --mla=pkg.mla maple/src/pkg.mpl
+"; exit $1 ; }
+
+@ 
+
+\subsection{Process Arguments}
+\label{sec:process-arguments}
+
+Call [[getopt]] to canonicalize the options.
+Equal signs between option names and option arguments are replaced with spaces.
+
+<<*>>=
+ARGS=$(getopt --options=aA:Bb:D:e:hI:kL:lm:M:QP:pRrsSw: \
+              --longoptions=append,assert:,defaultlib:,define: \
+              --longoptions=help,include:,lib:,lineinfo,log:,maple:,mla: \
+              --longoptions=nolockwarn,priority:,pack,quiet \
+	      --longoptions=readonly,reindex,skipini,syslib,warn: \
+              -- "$@")
+@ 
+
+Verify that all parameters have been processed.
+
+<<*>>=
+if [ $? != 0 ]; then usage; fi
+@ 
+
+Assign all fields in [[ARGS]] as positional arguments.
+
+<<*>>=
+eval set -- "${ARGS}"
+@ 
+
+Assign initial values to shell variables.
+
+<<*>>=
+APPEND=false          # true means append to existing mla
+LINEINFO=false        # true means embed lineinfo
+MAPLE=${MAPLE:-maple} # Maple script
+MLA=                  # name of Maple archive
+NO_LOCK_WARNING=false # true means suppress lock warnings
+OPTS="-q -e2 -A2"     # options passed to Maple
+PACK=false            # true means pack the mla
+PRIORITY=             # positive integer assigning search priority of mla
+QUIET=false           # true means suppress messages
+READONLY=false        # true means make mla read-only
+REINDEX=false         # true means reindex the mla
+SYSLIB=false          # true means add _syslib and lock options
+@ 
+
+Process each option and update the shell variables.
+
+<<*>>=
+while true; do
+    case "$1" in 
+        -A | --assert     ) OPTS="${OPTS} -A $2" ; shift 2 ;;
+        -B | --defaultlib ) OPTS="${OPTS} -B"    ; shift   ;;
+        -D | --define     ) OPTS="${OPTS} -D $2" ; shift 2 ;;
+        -I | --include    ) OPTS="${OPTS} -I $2" ; shift 2 ;;
+	-k | --nolockwarn ) NO_LOCK_WARNING=true ; shift   ;;
+        -L | --log        ) OPTS="${OPTS} -L $2" ; shift 2 ;;
+        -M | --maple      ) MAPLE="$2"           ; shift 2 ;;
+        -P | --priority   ) PRIORITY="$2"        ; shift 2 ;;
+        -Q | --quiet      ) QUIET=true           ; shift   ;;
+        -R | --readonly   ) READONLY=true        ; shift   ;;
+	-S | --syslib     ) SYSLIB=true          ; shift   ;;
+        -U | --undefine   ) OPTS="${OPTS} -U $2" ; shift 2 ;;
+        -a | --append     ) APPEND=true          ; shift   ;;
+        -b | --lib        ) OPTS="${OPTS} -b $2" ; shift 2 ;;
+        -e | --error      ) OPTS="${OPTS} -e $2" ; shift 2 ;;
+        -h | --help       ) help 0                         ;;
+        -l | --lineinfo   ) LINEINFO=true        ; shift   ;;
+        -m | --mla        ) MLA="$2"             ; shift 2 ;;
+        -p | --pack       ) PACK=true            ; shift   ;;
+        -r | --reindex    ) REINDEX=true         ; shift   ;;
+        -s | --skipini    ) OPTS="${OPTS} -s"    ; shift   ;;
+        -w | --warn       ) OPTS="${OPTS} -w $2" ; shift 2 ;;
+        --                ) shift ; break                  ;;
+         *                ) break                          ;;
+    esac
+done       
+@ 
+
+\subsection{Check Source Files}
+\label{sec:check-source-files}
+
+
+Verify that at least one source file has been specified
+and that all the source files exist.
+
+<<*>>=
+if [ -z "$*" ]; then
+    echo "no source files specified" >&2
+    usage 1
+else
+    for src in "$@"; do
+        if [ -d "${src}" ]; then
+            echo "${SCRIPT}: ${src} is a directory" >&2
+            usage 1
+        elif [ ! -f "${src}" ]; then
+            echo "${SCRIPT}: ${src} not found" >&2
+            usage 1
+        fi
+    done
+fi
+@ 
+
+\subsection{Assign Archive}
+\label{sec:assign-archive}
+
+Check whether an archive has been assigned.
+If not, use the basename of the first Maple source file.
+
+<<*>>=
+if [ -z "${MLA}" ]; then
+    MLA="${1##*/}"
+    MLA="${MLA%.*}.mla"
+    ${QUIET} || echo "no mla assigned; using ${MLA}"
+fi
+@ 
+
+
+Assign quoted version of [[MLA]], suitable for use in Maple procedures.
+
+<<*>>=
+MLAQ="\"${MLA}\""
+@
+
+\subsection{Assign Shell Variables}
+\label{sec:assign-vars}
+
+
+Assign the flag [[CREATE_MLA]] which indicates whether an archive must be created.
+If the [[APPEND]] flag is not true, first remove an existing archive.
+
+<<*>>=
+if [ ! -f ${MLA} ]; then
+    ${QUIET} || echo "creating archive ${MLA}"
+    CREATE_MLA=true
+elif ! ${APPEND}; then
+    ${QUIET} || echo "replacing archive ${MLA}"
+    rm -f ${MLA}
+    CREATE_MLA=true
+else
+    ${QUIET} || echo "appending to archive ${MLA}"
+    CREATE_MLA=false
+    TIME_STAMP=$(stat --format=%Y ${MLA})
+fi
+@
+
+Mark a spot to define various shell variables in the script;
+they will be defined herein shortly.
+
+<<*>>=
+<<assign shell variables>>
+@
+
+\subsection{Main Action}
+\label{sec:main-action}
+
+Create, on-the-fly, a Maple script and pipe it through Maple.
+The script modifies the source file to activate any [[savelib]] commands,
+and adds Maple commands and macros to create, load, and modify
+the Maple archive.  Use braces so the output from the contained commands
+is piped through Maple, without creating a subshell.
+
+<<*>>=
+{ <<create archive>>
+  <<assign [[savelibname]]>>
+  <<process source files>>
+  <<process archive>>
+  <<generate return code>>
+} | ${MAPLE} ${OPTS} \
+  | <<process Maple output>>
+<<handle error>>
+@ 
+
+
+<<create archive>>=
+if ${CREATE_MLA}; then
+    echo "march('create',${MLAQ}):"
+else
+    echo "march('setattribute',${MLAQ},'mode'='WRITABLE'):"
+fi
+@ 
+
+\subsubsection{Assign [[savelibname]]}
+\label{sec:assign-savelibname}
+
+Assign the archive name to the Maple global variable [[savelibname]],
+which is used by the Maple command [[savelib]].
+
+<<assign [[savelibname]]>>=
+echo "savelibname:=${MLAQ}:"
+@ 
+
+
+\subsubsection{Process Source Files}
+\label{sec:process-source-files}
+
+Process each source file.
+If the [[--lineinfo]] option was was passed, 
+insert a Maple macro that enables the generation of lineinfo data. 
+Edit the source file to activate the [[savelib]] statements.
+
+<<process source files>>=
+for src in "$@"; do
+    ${QUIET} || echo "loading ${src}" >&2
+    ${LINEINFO} && <<insert file macro>>
+    <<edit source file>>
+done
+@
+
+The following command inserts the Maple macro
+``\verb+$file "filename"+'' into the stream.
+The call to [[realpath]] generates an absolute (rooted)
+path to the source file.
+Maple uses the inserted macro to generate lineinfo data.\footnote{
+Currently, storing the lineinfo data in a Maple library archive
+requires a custom kernel.}
+
+<<insert file macro>>=
+echo \$file \"$(realpath "${src}")\"
+@ 
+
+\subsubsection{Edit Source File}
+\label{sec:edit-stream}
+
+Edit each source file and write to standard output.
+Activate commented-out [[savelib]] statements.
+Insert a final newline, if one does not exist.
+
+<<edit source file>>=
+sed -e <<activate [[savelib]]>> \
+    -e <<insert final newline>> \
+    ${src}
+@
+
+Substitute each [[#savelib]] at the start of of a line with [[${SAVELIB}]].
+
+<<activate [[savelib]]>>=
+"s/^#savelib/${SAVELIB}/"
+@ 
+
+Insert a newline at the end of the file.
+The [[$]] is the address, it matches the last line.
+The [[a]] is the append command, it appends the following text.
+The backslash corresponds to a newline.
+
+<<insert final newline>>=
+'$a\'
+@ 
+
+\subsubsection{Process Archive}
+\label{sec:process-archive}
+
+Apply relevant options to the archive
+by calling the Maple [[march]] procedure.
+
+<<process archive>>=
+${PACK} && echo "march('pack',${MLAQ}):"
+${REINDEX} && echo "march('reindex',${MLAQ}):"
+[ ! -z "${PRIORITY}" ] \
+  && echo "march('setattribute',${MLAQ},'priority'=${PRIORITY}):"
+${READONLY} && echo "march('setattribute',${MLAQ},'mode'='READONLY'):"
+@ 
+
+\subsubsection{Generate Return Status}
+\label{sec:return-status}
+
+Stop Maple and return with with status 123,
+which here indicates success.
+If an error previously occurred,
+ Maple terminates and usually exits with status 0,
+ though it can raise error codes from 1 to 5.
+
+<<generate return code>>=
+echo "${STOP}"
+@
+
+The stop command is preceded by some trickery, the string ``[[(*"*)]]''.
+The purpose of this is to terminate an otherwise unterminated Maple string delimiter. 
+Without that, an unterminated string causes Maple to endlessly generate
+``\texttt{Warning incomplete string;  use " to end the string}.''
+
+Assign a macro that expands to the desired Maple input
+and a regular expression that matches it in the output.
+
+<<assign shell variables>>=
+STOP='(*"*)`stop`(123);'
+STOP_RE='(\*"\*)`stop`(123);'
+@
+
+\subsubsection{Process Maple Output}
+\label{sec:process-output}
+
+Pipe the Maple output through the following [[sed]] program.
+The first line removes the lock warning, if enabled.
+The remaining lines replace a useless\footnote{Useless
+ because the line it indicates is past the end of the file.}
+syntax error with the message ``\texttt{Syntax error in source}.''
+It looks for a line matching a syntax error message
+followed by a line matching  [[${STOP_RE}]],
+ which will be echoed because it was not executed by Maple.
+
+
+<<process Maple output>>=
+sed -e "${REMOVE_LOCK_WARNING}" \
+    -e "/${STOP_RE}/{s///;q}" \
+    -e "/^on line [0-9]*, syntax error/ {
+        N
+        s/.*${STOP_RE}/\n\nSyntax error in source${STOP}/
+        t quit
+        P
+        :quit
+        D
+       }"
+@
+
+Assign [[${SAVELIB}]] either [[savelib]] or [[_savelib]];
+the latter adds [[_syslib]] and [[lock]] options to procedures.
+Set [[REMOVE_LOCK_WARNING]], if needed, to a [[sed]] command
+that removes the lock warnings.
+
+<<assign shell variables>>=
+if ${SYSLIB}; then
+    SAVELIB=_savelib
+    if ${NO_LOCK_WARNING}; then
+        REMOVE_LOCK_WARNING="/adding option lock/d"
+    else     
+        REMOVE_LOCK_WARNING=
+    fi
+else
+    SAVELIB=" savelib"
+fi
+@
+
+\subsubsection{Handle Error}
+\label{sec:check-errors}
+
+If the load completes with no errors,
+Maple returns 123; see \S\ref{sec:return-status}.
+The status is available from the [[PIPESTATUS[1]]] \bash variable.
+If unsuccessful, remove the Maple archive if it was created,
+otherwise reset its timestamp\footnote{The ampersand before [[${TIME_STAMP}]]
+  is used by GNU coreutils to treat a timestamp in seconds as a date.}
+and return an exit status of 1 indicating an error.
+
+<<handle error>>=
+if [ ${PIPESTATUS[1]} == 123 ]; then
+    exit 0
+else
+    if ${CREATE_MLA}; then
+        rm -f ${MLA}
+    else
+        touch --date=@${TIME_STAMP} ${MLA}
+    fi
+    exit 1
+fi    
+@
+
+\section*{Chunks} 
+\addcontentsline{toc}{section}{\numberline{}Chunks}
+\nowebchunks
+\section*{Index}
+\addcontentsline{toc}{section}{\numberline{}Index}
+\nowebindex
+%\addcontentsline{toc}{section}{\numberline{}References}
+
+\end{document}
