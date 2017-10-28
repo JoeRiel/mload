@@ -46,13 +46,11 @@ pdf: mload.nw
 	  -index \
 	  $< > $@
 
-# .PRECIOUS: %.aux
-
 %.aux: %.tex
-	pdflatex $<
+	pdflatex $< > /dev/null
 
 %.pdf: %.tex %.aux
-	pdflatex $<
+	pdflatex $< > /dev/null
 	pdflatex $<
 
 
