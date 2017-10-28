@@ -49,20 +49,22 @@
 \mload is a \bash script
 that loads Maple source files into a Maple library archive (\fileq{.mla} file).
 It uses tty \maple and supports both short and GNU-style long options.
-It is a replacement for \cmd{sload}.
+It is a replacement for \cmd{sload}, which is a Maplesoft internal tool.
 
 \section{Creation}
 \label{sec:creation}
 
 This is the \noweb documentation for \mload.
-It is overkill for such a small script, however,
+Using \noweb is overkill for such a small script, however,
 there are some subtleties that are not otherwise easily documented.  
 Regardless, I've found that crafting a literate program
 invariably leads to better code and
 allows me to understand what I did several years hence.
 
 To recreate this pdf, use the provided \fileq{Makefile} with target \target{pdf}.
-To create \mload, use the target \target{cmds} or \target{mload}.
+You'll need the the \knoweb \LaTeX{} style file, which is available
+at \url{github.com/JoeRiel}.
+To create \mload, use the target \target{mload}.
 
 
 \section{Usage}
@@ -75,23 +77,35 @@ The most basic usage is
 \end{verbatim}
 %
 which reads the Maple source file \fileq{mypkg.mpl} and loads the result into \fileq{mypkg.mla},
-provided \fileq{mypkg.mpl} includes the appropriate \cmd{savelib} command, typically
+provided \fileq{mypkg.mpl} includes the appropriate \cmd{savelib} command, for example
 
 \begin{verbatim}
-  #savelib('mypkg')
+  #savelib('mypkg');
 \end{verbatim}
+
+As with \cmd{sload}, the preceding comment-character is first stripped
+from the \cmd{savelib} command so that the command is active.
 
 More typical is to explicitly assign the Maple archive with the \option{--mla} option.
 For example
-
+%
 \begin{verbatim}
   mload --mla=mypkg.mla mypkg.mpl
+\end{verbatim}
+
+The GNU-style long options are useful documentation in a script
+for example,
+%
+\begin{verbatim}
+  mload --quiet --lineinfo --reindex --readonly \
+        --include=${PWD} \
+        --mla=foo.mla foo.mpl
 \end{verbatim}
 
 \subsection{Options}
 \label{sec:options}
 
-The following subsections defines each of the options available to \mload.
+The following subsections define each of the options available to \mload.
 Most of the short-form options are standard command-line [[maple]] options;
 see the [[maple]] help page.
 
@@ -572,7 +586,7 @@ echo "savelibname:=${MLAQ}:"
 \label{sec:process-source-files}
 
 Process each source file.
-If the [[--lineinfo]] option was was passed, 
+If the [[--lineinfo]] option was passed, 
 insert a Maple macro that enables the generation of lineinfo data. 
 Edit the source file to activate the [[savelib]] statements.
 
@@ -588,9 +602,9 @@ The following command inserts the Maple macro
 ``\verb+$file "filename"+'' into the stream.
 The call to [[realpath]] generates an absolute (rooted)
 path to the source file.
-Maple uses the inserted macro to generate lineinfo data.\footnote{
-Currently, storing the lineinfo data in a Maple library archive
-requires a custom kernel.}
+Maple uses the inserted macro to generate lineinfo data.
+This is needed for Maple source files coming from [[stdin]],
+as Maple has no other way to know the filename.
 
 <<insert file macro>>=
 echo \$file \"$(realpath "${src}")\"
@@ -600,7 +614,7 @@ echo \$file \"$(realpath "${src}")\"
 \label{sec:edit-stream}
 
 Edit each source file and write to standard output.
-Activate commented-out [[savelib]] statements.
+Activate any commented-out [[savelib]] statements.
 Insert a final newline, if one does not exist.
 
 <<edit source file>>=
