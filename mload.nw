@@ -49,7 +49,7 @@
 \mload is a \bash script
 that loads Maple source files into a Maple library archive (\fileq{.mla} file).
 It uses tty \maple and supports both short and GNU-style long options.
-It is a replacement for \cmd{sload}, which is a Maplesoft internal tool.
+It is a replacement for \cmd{sload}, a Maplesoft internal tool.
 
 \section{Creation}
 \label{sec:creation}
