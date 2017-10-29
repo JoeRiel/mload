@@ -97,8 +97,8 @@ For example
   mload --mla=mypkg.mla mypkg.mpl
 \end{verbatim}
 
-The GNU-style long options are useful documentation in a script
-for example,
+The GNU-style long options are useful documentation in a script.
+For example,
 %
 \begin{verbatim}
   mload --quiet --lineinfo --reindex --readonly \
