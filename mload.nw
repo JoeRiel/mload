@@ -50,21 +50,25 @@
 that loads Maple source files into a Maple library archive (\fileq{.mla} file).
 It uses tty \maple and supports both short and GNU-style long options.
 It is a replacement for \cmd{sload}, a Maplesoft internal tool.
+Maple is a computer algebra system from \href{https://www.maplesoft.com}{Maplesoft}.
+
 
 \section{Creation}
 \label{sec:creation}
 
 This is the \noweb documentation for \mload.
-Using \noweb is overkill for such a small script, however,
+A literate program is overkill for such a small script, however,
 there are some subtleties that are not otherwise easily documented.  
 Regardless, I've found that crafting a literate program
 invariably leads to better code and
 allows me to understand what I did several years hence.
 
 To recreate this pdf, use the provided \fileq{Makefile} with target \target{pdf}.
-You'll need the the \knoweb \LaTeX{} style file, which is available
-at \url{github.com/JoeRiel}.
-To create \mload, use the target \target{mload}.
+You'll need \noweb, a simplified literate programming system by Norm Ramsey,
+available at \url{github.com/nrnrnr/noweb}
+and the \knoweb \LaTeX{} style file extension,
+available at \url{github.com/JoeRiel/knoweb}.
+To create \mload, use the target \target{build}.
 
 
 \section{Usage}
