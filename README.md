@@ -10,6 +10,8 @@ Maplesoft internal tool.  Maple is a computer algebra system from
 
 The source, **mload.nw**, for the shell script is a literate program
 written with [noweb](https:github.com/nrnrnr/noweb) and the
-[knoweb](https:github.com/JoeRiel/knoweb) extension.  The prebuilt
-shell script and its documentation are included in the release, as
-**mload** and **mload.pdf**.
+[knoweb](https:github.com/JoeRiel/knoweb) extension.
+For those without access to the noweb tool chain,
+the prebuilt shell script and its documentation are included
+in the [release](https:github.com/JoeRiel/mload/releases),
+as **mload** and **mload.pdf**.
