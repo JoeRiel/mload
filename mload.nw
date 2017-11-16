@@ -293,7 +293,7 @@ adds the [[_syslib]] option to each procedure,
 which indicates that it is a system library procedure.
 It does so by using [[_savelib]] rather than [[savelib]] to build the archive.   
 When this option is active, Maple generates warnings 
-when it detects a procedure is not thread-save, see \S~\ref{sec:lock-warnings}.
+when it detects a procedure is not thread-safe; see \S~\ref{sec:lock-warnings}.
 
 \subsubsection{Undefine Macro}
 \label{sec:undefine-macro}
