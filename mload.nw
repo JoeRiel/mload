@@ -249,6 +249,13 @@ The default is [[maple]].
 The \option{--pack} ([[-p]]) option packs the library archive, 
 which removes wasted space from old copies of objects.
 
+\subsubsection{New Features}
+\label{sec:newfeatures}
+
+The \option{--newfeatures} ([[-n]]) option
+allows the use of multiple [[local]], [[global]], and [[export]]
+declarations within procedures and modules; see \S~\ref{sec:new-lang-features}.
+
 
 \subsubsection{Priority}
 \label{sec:priority}
@@ -371,6 +378,7 @@ Options:
   -L LOG   | --log=LOG      write library reads to file LOG
   -m MLA   | --mla=MLA      specify the MLA (Maple library archive)
   -M MAPLE | --maple=MAPLE  specify MAPLE script
+  -n       | --newfeatures  enable multiple local/global/export declaration
   -p       | --pack         pack the MLA
   -P n     | --priority=n   assign priority (positive integer)
   -Q       | --quiet        suppress non-error messages 
@@ -402,10 +410,10 @@ Call [[getopt]] to canonicalize the options.
 Equal signs between option names and option arguments are replaced with spaces.
 
 <<*>>=
-ARGS=$(getopt --options=aA:Bb:D:e:hI:kL:lm:M:QP:pRrsSw: \
+ARGS=$(getopt --options=aA:Bb:D:e:hI:kL:lm:M:nQP:pRrsSw: \
               --longoptions=append,assert:,defaultlib:,define: \
               --longoptions=help,include:,lib:,lineinfo,log:,maple:,mla: \
-              --longoptions=nolockwarn,priority:,pack,quiet \
+              --longoptions=newfeatures,nolockwarn,priority:,pack,quiet \
 	      --longoptions=readonly,reindex,skipini,syslib,warn: \
               -- "$@")
 @ 
@@ -429,6 +437,7 @@ APPEND=false          # true means append to existing mla
 LINEINFO=false        # true means embed lineinfo
 MAPLE=${MAPLE:-maple} # Maple script
 MLA=                  # name of Maple archive
+NEW_FEATURES=false    # true means enable new language features
 NO_LOCK_WARNING=false # true means suppress lock warnings
 OPTS="-q -e2 -A2"     # options passed to Maple
 PACK=false            # true means pack the mla
@@ -444,30 +453,31 @@ Process each option and update the shell variables.
 <<*>>=
 while true; do
     case "$1" in 
-        -A | --assert     ) OPTS="${OPTS} -A $2" ; shift 2 ;;
-        -B | --defaultlib ) OPTS="${OPTS} -B"    ; shift   ;;
-        -D | --define     ) OPTS="${OPTS} -D $2" ; shift 2 ;;
-        -I | --include    ) OPTS="${OPTS} -I $2" ; shift 2 ;;
-	-k | --nolockwarn ) NO_LOCK_WARNING=true ; shift   ;;
-        -L | --log        ) OPTS="${OPTS} -L $2" ; shift 2 ;;
-        -M | --maple      ) MAPLE="$2"           ; shift 2 ;;
-        -P | --priority   ) PRIORITY="$2"        ; shift 2 ;;
-        -Q | --quiet      ) QUIET=true           ; shift   ;;
-        -R | --readonly   ) READONLY=true        ; shift   ;;
-	-S | --syslib     ) SYSLIB=true          ; shift   ;;
-        -U | --undefine   ) OPTS="${OPTS} -U $2" ; shift 2 ;;
-        -a | --append     ) APPEND=true          ; shift   ;;
-        -b | --lib        ) OPTS="${OPTS} -b $2" ; shift 2 ;;
-        -e | --error      ) OPTS="${OPTS} -e $2" ; shift 2 ;;
-        -h | --help       ) help 0                         ;;
-        -l | --lineinfo   ) LINEINFO=true        ; shift   ;;
-        -m | --mla        ) MLA="$2"             ; shift 2 ;;
-        -p | --pack       ) PACK=true            ; shift   ;;
-        -r | --reindex    ) REINDEX=true         ; shift   ;;
-        -s | --skipini    ) OPTS="${OPTS} -s"    ; shift   ;;
-        -w | --warn       ) OPTS="${OPTS} -w $2" ; shift 2 ;;
-        --                ) shift ; break                  ;;
-         *                ) break                          ;;
+        -A | --assert      ) OPTS="${OPTS} -A $2" ; shift 2 ;;
+        -B | --defaultlib  ) OPTS="${OPTS} -B"    ; shift   ;;
+        -D | --define      ) OPTS="${OPTS} -D $2" ; shift 2 ;;
+        -I | --include     ) OPTS="${OPTS} -I $2" ; shift 2 ;;
+	-k | --nolockwarn  ) NO_LOCK_WARNING=true ; shift   ;;
+        -L | --log         ) OPTS="${OPTS} -L $2" ; shift 2 ;;
+        -M | --maple       ) MAPLE="$2"           ; shift 2 ;;
+        -P | --priority    ) PRIORITY="$2"        ; shift 2 ;;
+        -Q | --quiet       ) QUIET=true           ; shift   ;;
+        -R | --readonly    ) READONLY=true        ; shift   ;;
+	-S | --syslib      ) SYSLIB=true          ; shift   ;;
+        -U | --undefine    ) OPTS="${OPTS} -U $2" ; shift 2 ;;
+        -a | --append      ) APPEND=true          ; shift   ;;
+        -b | --lib         ) OPTS="${OPTS} -b $2" ; shift 2 ;;
+        -e | --error       ) OPTS="${OPTS} -e $2" ; shift 2 ;;
+        -h | --help        ) help 0                         ;;
+        -l | --lineinfo    ) LINEINFO=true        ; shift   ;;
+        -m | --mla         ) MLA="$2"             ; shift 2 ;;
+        -n | --newfeatures ) NEW_FEATURES=true    ; shift   ;;
+        -p | --pack        ) PACK=true            ; shift   ;;
+        -r | --reindex     ) REINDEX=true         ; shift   ;;
+        -s | --skipini     ) OPTS="${OPTS} -s"    ; shift   ;;
+        -w | --warn        ) OPTS="${OPTS} -w $2" ; shift 2 ;;
+        --                 ) shift ; break                  ;;
+         *                 ) break                          ;;
     esac
 done       
 @ 
@@ -544,6 +554,19 @@ they will be defined herein shortly.
 
 <<*>>=
 <<assign shell variables>>
+@
+\subsection{Use New Language Features}
+\label{sec:new-lang-features}
+
+Command-line Maple allows multiple
+[[local]], [[global]], and [[export]] declarations if the
+shell environment variable [[MAPLE_NEW_LANGUAGE_FEATURES]]
+is assigned 1.
+
+<<*>>=
+if ${NEW_FEATURES}; then
+   export MAPLE_NEW_LANGUAGE_FEATURES=1
+fi
 @
 
 \subsection{Main Action}
