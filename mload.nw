@@ -453,7 +453,7 @@ Process each option and update the shell variables.
 <<*>>=
 while true; do
     case "$1" in 
-        -A | --assert      ) OPTS="${OPTS} -A $2" ; shift 2 ;;
+        -A | --assert      ) OPTS="${OPTS} -A$2"  ; shift 2 ;;
         -B | --defaultlib  ) OPTS="${OPTS} -B"    ; shift   ;;
         -D | --define      ) OPTS="${OPTS} -D $2" ; shift 2 ;;
         -I | --include     ) OPTS="${OPTS} -I $2" ; shift 2 ;;
