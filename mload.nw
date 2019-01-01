@@ -94,8 +94,10 @@ More typical is to explicitly assign the Maple archive with the \option{--mla} o
 For example
 %
 \begin{verbatim}
-  mload --mla=mypkg.mla mypkg.mpl
+  mload --mla=myotherpkg.mla mypkg.mpl
 \end{verbatim}
+%
+which creates the Maple archive file \fileq{myotherpkg.mla}.
 
 The GNU-style long options are useful documentation in a script.
 For example,
