@@ -9,7 +9,7 @@ Maplesoft internal tool.  Maple is a computer algebra system from
 [Maplesoft](https://www.maplesoft.com).
 
 The source, **mload.nw**, for the shell script is a literate program
-written with [noweb](https:github.com/nrnrnr/noweb) and the
+written with [noweb](https://github.com/nrnrnr/noweb) and the
 [knoweb](https://github.com/JoeRiel/knoweb) extension.
 For those without access to the noweb tool chain,
 the prebuilt shell script and its documentation are included
